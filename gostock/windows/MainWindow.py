@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
         self.kiwoom.interval()
 
     def _on_soar_timer(self):
-        self.load_거래량급등()
+        self.load_전일대비등락률상위()
 
     def refresh_all_stocks_code_name(self):
         for market_code in [StockUtil.MARKET_KOSPI, StockUtil.MARKET_KOSDAQ]:
@@ -46,7 +46,7 @@ class MainWindow(QMainWindow):
                 name = self.kiwoom.GetMasterCodeName(code)
                 StockUtil.add_stock(market_code, code, name)
 
-    def load_거래량급등(self):
+    def load_전일대비등락률상위(self):
         def result(rows):
             now = datetime.today()
             s_date = now.strftime('%Y-%m-%d')
@@ -59,4 +59,4 @@ class MainWindow(QMainWindow):
             pathlib.Path(f'_data/{s_to_h}/{s_to_m}').mkdir(parents=True, exist_ok=True)
             FileUtil.write_json(f'_data/{s_to_h}/{s_to_m}/{s_to_s}.json', rows)
 
-        self.kiwoom.OPT10023_거래량급증요청(MyKiwoom.SCREEN_거래량급증요청_실시간열람용, result)
+        self.kiwoom.opt10027_전일대비등락률상위요청(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, result)

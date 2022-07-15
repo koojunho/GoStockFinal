@@ -60,6 +60,7 @@ class MyKiwoom:
     SCREEN_거래량급증요청_실시간열람용 = '2000'
     SCREEN_주식기본정보요청_종목명얻기 = '3000'
     SCREEN_주식틱차트조회요청_틱얻기 = '4000'
+    SCREEN_전일대비등락률상위요청_실시간열람용 = '5000'
 
     def __init__(self):
         self.real_fields = FileUtil.load_json('static/real_fields.json')
@@ -198,6 +199,29 @@ class MyKiwoom:
 
         self.comm_rq_works.append([impl, screen, tr_callback])
 
+    def opt10027_전일대비등락률상위요청(self, screen, tr_callback):
+        def impl(screen, tr_callback):
+            # 시장구분 = 000:전체, 001:코스피, 101:코스닥
+            self.SetInputValue("시장구분", "000")
+            # 정렬구분 = 1:상승률, 2:상승폭, 3:하락률, 4:하락폭, 5:보합
+            self.SetInputValue("정렬구분", "1")
+            # 거래량조건 = 0000:전체조회, 0010:만주이상, 0050:5만주이상, 0100:10만주이상, 0150:15만주이상, 0200:20만주이상, 0300:30만주이상, 0500:50만주이상, 1000:백만주이상
+            self.SetInputValue("거래량조건", "0000")
+            # 종목조건 = 0:전체조회, 1:관리종목제외, 4:우선주+관리주제외, 3:우선주제외, 5:증100제외, 6:증100만보기, 7:증40만보기, 8:증30만보기, 9:증20만보기, 11:정리매매종목제외, 12:증50만 보기, 13:증60만 보기, 14:ETF제외, 15:스팩제외, 16:ETF+ETN제외
+            self.SetInputValue("종목조건", "16")
+            # 신용조건 = 0:전체조회, 1:신용융자A군, 2:신용융자B군, 3:신용융자C군, 4:신용융자D군, 5:신용한도초과제외, 8:신용대주, 9:신용융자전체
+            self.SetInputValue("신용조건", "0")
+            # 상하한포함 = 0:불 포함, 1:포함
+            self.SetInputValue("상하한포함", "0")
+            # 가격조건 = 0:전체조회, 1:1천원미만, 2:1천원~2천원, 3:2천원~5천원, 4:5천원~1만원, 5:1만원이상, 8:1천원이상, 10:1만원미만
+            self.SetInputValue("가격조건", "0")
+            # 거래대금조건 = 0:전체조회, 3:3천만원이상, 5:5천만원이상, 10:1억원이상, 30:3억원이상, 50:5억원이상, 100:10억원이상, 300:30억원이상, 500:50억원이상, 1000:100억원이상, 3000:300억원이상, 5000:500억원이상
+            self.SetInputValue("거래대금조건", "0")
+            self.CommRqData("전일대비등락률상위요청", "opt10027", 0, screen)
+            self.tr_callbacks[screen] = tr_callback
+
+        self.comm_rq_works.append([impl, screen, tr_callback])
+
     def opt10001_주식기본정보요청(self, screen, code, tr_callback):
         def impl(screen, code, tr_callback):
             self.SetInputValue("종목코드", code)
@@ -241,6 +265,7 @@ class MyKiwoom:
         # print('_on_tr_data', screen, rqname, trcode, record, next)
         fields = self.real_fields.get(rqname)
         if not fields:
+            print('real_fields.json에 필드 정보가 없습니다.')
             return []
 
         count = self.ocx.dynamicCall("GetRepeatCnt(QString, QString)", trcode, rqname)
