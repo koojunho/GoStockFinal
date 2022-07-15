@@ -48,7 +48,6 @@ class MainWindow(QMainWindow):
 
     def load_거래량급등(self):
         def result(rows):
-            print('혹시')
             now = datetime.today()
             s_date = now.strftime('%Y-%m-%d')
             s_h = now.strftime('%H')

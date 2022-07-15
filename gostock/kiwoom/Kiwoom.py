@@ -167,8 +167,7 @@ class MyKiwoom:
         if len(self.comm_rq_works) > 0:
             curr = time.time()
             gap = curr - self.last_time_comm_rq_work
-            # if gap >= 4:
-            if gap >= 0.5:  # todo: 거래량급증 빠른 호출을 위해 임시로 사용
+            if gap >= 4:
                 self.last_time_comm_rq_work = curr
                 call_data = self.comm_rq_works.pop(0)
                 method = call_data.pop(0)
@@ -239,7 +238,7 @@ class MyKiwoom:
         self.ocx.dynamicCall("CommRqData(QString, QString, int, QString)", rqname, trcode, next, screen)
 
     def _on_tr_data(self, screen, rqname, trcode, record, next):
-        print('_on_tr_data', screen, rqname, trcode, record, next)
+        # print('_on_tr_data', screen, rqname, trcode, record, next)
         fields = self.real_fields.get(rqname)
         if not fields:
             return []
