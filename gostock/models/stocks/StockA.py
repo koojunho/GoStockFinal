@@ -16,9 +16,9 @@ class StockA:
         elif market == '10':
             self.s_market = '닥'
 
-        self.last_time = None
-
         self.time_delay = 0
+
+        self.last_time = None
 
         self.price_history = []
 
@@ -28,9 +28,25 @@ class StockA:
         curr_price = price
         curr_rate = data.get('등락율')
 
-        new_time = False
-        if self.last_time != kiwoom_time:
-            self.last_time = kiwoom_time
-            new_time = True
-
         self.time_delay = time.time() - curr_time
+
+        if self.last_time == kiwoom_time:
+            return
+        self.last_time = kiwoom_time
+
+        soar = False
+        for ph in reversed(self.price_history):
+            # 5초 이내의 급등을 찾아야 하므로 5초를 넘어가면 종료
+            if curr_time - ph.time > 5:
+                break
+            # 급등을 찾아야 하므로 급등률이 2보다 작으면 종료
+            if curr_rate - ph.rate < 2:
+                break
+            soar = True
+            break
+
+        if soar:
+            print('급등:', self.code, self.name)
+
+        self.price_history.append(DotDict({'time': curr_time, 'price': curr_price, 'rate': curr_rate}))
+        self.price_history = self.price_history[-self.SIZE_OF_PRICE_HISTORY:]
