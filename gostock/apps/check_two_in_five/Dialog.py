@@ -5,50 +5,30 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
 from gostock.kiwoom.Kiwoom import MyKiwoom
-from gostock.models.stocks.StockA import StockA
+from gostock.apps.two_percent_up.Stock import Stock
 from gostock.utils import *
 
 
-class MainWindow(QMainWindow):
-    def __init__(self):
+class Dialog(QDialog):
+    def __init__(self, kiwoom):
         super().__init__()
+
         self.stocks = {}
 
-        self.kiwoom = MyKiwoom()
+        self.kiwoom = kiwoom
         self.kiwoom.add_real_data_callback(self.update_real_data)
-        self.will_login()
-
-        self.timer = QTimer()
-        self.timer.setInterval(100)
-        self.timer.timeout.connect(self._on_timer)
-        self.timer.start()
 
         self.soar_timer = QTimer()
         self.soar_timer.setInterval(4000)
         self.soar_timer.timeout.connect(self._on_soar_timer)
+        self.soar_timer.start()
 
-    def will_login(self):
-        self.kiwoom.add_login_callback(self.did_login)
-        self.kiwoom.login()
-
-    def did_login(self, err_code):
-        self.kiwoom.remove_login_callback(self.did_login)
-        if err_code == 0:
-            self.refresh_all_stocks_code_name()
-            self.soar_timer.start()
-
-    def _on_timer(self):
-        self.kiwoom.interval()
+    def closeEvent(self, event):
+        self.soar_timer.stop()
+        self.kiwoom.remove_real_data_callback(self.update_real_data)
 
     def _on_soar_timer(self):
         self.load_전일대비등락률상위()
-
-    def refresh_all_stocks_code_name(self):
-        for market_code in [StockUtil.MARKET_KOSPI, StockUtil.MARKET_KOSDAQ]:
-            code_list = list(filter(len, self.kiwoom.GetCodeListByMarket(market_code).split(';')))
-            for code in code_list:
-                name = self.kiwoom.GetMasterCodeName(code)
-                StockUtil.add_stock(market_code, code, name)
 
     def load_전일대비등락률상위(self):
         def result(rows):
@@ -83,7 +63,7 @@ class MainWindow(QMainWindow):
             if existing_stock:  # 원래 구독 중인 종목은 기존 객체를 사용.
                 stocks[code] = existing_stock
             else:
-                stock = StockA(code, name, StockUtil.get_market(code))
+                stock = Stock(code, name, StockUtil.get_market(code))
                 stocks[code] = stock
         self.stocks = stocks
         new_code_list = self.get_stock_codes()

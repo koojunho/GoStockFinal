@@ -3,7 +3,7 @@ import time
 from gostock.utils import *
 
 
-class StockA:
+class Stock:
     SIZE_OF_PRICE_HISTORY = 5
 
     def __init__(self, code, name, market):

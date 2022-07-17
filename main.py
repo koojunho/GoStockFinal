@@ -3,7 +3,7 @@ import sys
 import matplotlib
 from PyQt5.QtWidgets import *
 
-from gostock.windows.MainWindow import MainWindow
+from gostock.MainWindow import MainWindow
 
 matplotlib.use('Qt5Agg')
 
