@@ -12,6 +12,7 @@ from gostock.utils import *
 class Dialog(QDialog):
     def __init__(self, kiwoom):
         super().__init__()
+        self.setWindowTitle("2% 상승 시 매수")
 
         self.stocks = {}
 
