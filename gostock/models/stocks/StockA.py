@@ -26,9 +26,12 @@ class StockA:
         curr_dt = KiwoomUtil.kiwoom_time_2_datetime(kiwoom_time)
         curr_time = KiwoomUtil.datetime_2_timestamp(curr_dt)
         curr_price = price
-        curr_rate = data.get('등락율')
+        curr_rate = float(data.get('등락율'))
 
         self.time_delay = time.time() - curr_time
+        if self.time_delay > 1:
+            print('delay:', self.time_delay)
+            # return
 
         if self.last_time == kiwoom_time:
             return
@@ -46,7 +49,7 @@ class StockA:
             break
 
         if soar:
-            print('급등:', self.code, self.name)
+            print('급등:', self.code, self.name, curr_price)
 
         self.price_history.append(DotDict({'time': curr_time, 'price': curr_price, 'rate': curr_rate}))
         self.price_history = self.price_history[-self.SIZE_OF_PRICE_HISTORY:]
