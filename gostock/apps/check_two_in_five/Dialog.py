@@ -56,8 +56,8 @@ class Dialog(QDialog):
         self.kiwoom.opt10079_주식틱차트조회요청(MyKiwoom.SCREEN_주식틱차트조회요청_틱얻기, self.code, 0, result)
 
     def test(self):
-        rows = FileUtil.load_json(f'_data/20220715_049180.json')
-        begin_price = 5030
+        rows = FileUtil.load_json(f'_data/20220715_357580.json')
+        begin_price = 12700
         last_time = None
         price_history = []
         for row in rows:
