@@ -8,10 +8,9 @@ from gostock.utils import *
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('GoStock Final')
 
         self.kiwoom = MyKiwoom()
-
-        self.will_login()
 
         self.timer = QTimer()
         self.timer.setInterval(100)
@@ -22,6 +21,10 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
+
+        btn = QPushButton("로그인")
+        btn.clicked.connect(self.will_login)
+        layout.addWidget(btn)
 
         btn = QPushButton("2% 상승 시 매수")
         btn.clicked.connect(self.open_dlg_two_percent)
