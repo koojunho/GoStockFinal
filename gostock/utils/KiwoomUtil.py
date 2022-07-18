@@ -1,5 +1,7 @@
 from datetime import datetime
 
+import winsound
+
 
 class KiwoomUtil:
     @staticmethod
@@ -57,6 +59,13 @@ class KiwoomUtil:
         result = right  # 최종 코드
 
         return old_list, result, new_list
+
+    @staticmethod
+    def ding():
+        frequency = 2500  # Set Frequency To 2500 Hertz
+        duration = 20  # Set Duration To 1000 ms == 1 second
+        for i in range(10):
+            winsound.Beep(frequency, duration)
 
     @staticmethod
     def get_hoga_gap(begin_price, end_price, market):

@@ -4,7 +4,8 @@ from gostock.utils import *
 
 
 class Stock:
-    SIZE_OF_PRICE_HISTORY = 5
+    MAX_SEC = 50
+    SIZE_OF_PRICE_HISTORY = MAX_SEC
 
     def __init__(self, code, name, market):
         self.code = code
@@ -29,9 +30,6 @@ class Stock:
         curr_rate = float(data.get('등락율'))
 
         self.time_delay = time.time() - curr_time
-        if self.time_delay > 1:
-            print('delay:', self.time_delay)
-            # return
 
         if self.last_time == kiwoom_time:
             return
@@ -39,17 +37,20 @@ class Stock:
 
         soar = False
         for ph in reversed(self.price_history):
-            # 5초 이내의 급등을 찾아야 하므로 5초를 넘어가면 종료
-            if curr_time - ph.time > 5:
+            # MAX_SEC 초 이내의 급등을 찾아야 하므로 MAX_SEC 초를 넘어가면 종료
+            if curr_time - ph.time > self.MAX_SEC:
                 break
-            # 급등을 찾아야 하므로 급등률이 2보다 작으면 종료
+            # 급등을 찾아야 하므로 급등률이 2%보다 작으면 종료
             if curr_rate - ph.rate < 2:
                 break
             soar = True
             break
 
-        if soar:
-            print('급등:', self.code, self.name, curr_price)
-
         self.price_history.append(DotDict({'time': curr_time, 'price': curr_price, 'rate': curr_rate}))
         self.price_history = self.price_history[-self.SIZE_OF_PRICE_HISTORY:]
+
+        if soar:
+            print('급등:', self.code, self.name, curr_price)
+            return True
+
+        return False

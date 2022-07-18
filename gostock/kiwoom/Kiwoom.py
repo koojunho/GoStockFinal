@@ -265,7 +265,7 @@ class MyKiwoom:
         # print('_on_tr_data', screen, rqname, trcode, record, next)
         fields = self.real_fields.get(rqname)
         if not fields:
-            print('real_fields.json에 필드 정보가 없습니다.')
+            print(f'real_fields.json에 "{rqname}"에 대한 필드 정보가 없습니다.')
             return []
 
         count = self.ocx.dynamicCall("GetRepeatCnt(QString, QString)", trcode, rqname)
@@ -332,7 +332,7 @@ class MyKiwoom:
         self.chejan_data_callbacks.remove(callback)
 
     def _on_chejan_data(self, gubun, item_cnt, fid_list):
-        print('_on_chejan_data', gubun, item_cnt, fid_list)
+        # print('_on_chejan_data', gubun, item_cnt, fid_list)
         data = {}
         fields = self.real_fields.get('주문체결_잔고수신')
         fid_list = fid_list.split(';')

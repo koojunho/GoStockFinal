@@ -4,8 +4,8 @@ from datetime import datetime
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
-from gostock.kiwoom.Kiwoom import MyKiwoom
 from gostock.apps.two_percent_up.Stock import Stock
+from gostock.kiwoom.Kiwoom import MyKiwoom
 from gostock.utils import *
 
 
@@ -54,18 +54,22 @@ class Dialog(QDialog):
     def prepare_stock_objs(self, rows):
         old_code_list = self.get_stock_codes()
         stocks = {}
-        for idx, rank_data in enumerate(rows):
-            rank = idx + 1
-            code = rank_data.get('종목코드')
-            name = rank_data.get('종목명')
-            if not code:
-                continue
-            existing_stock = self.stocks.get(code)
-            if existing_stock:  # 원래 구독 중인 종목은 기존 객체를 사용.
-                stocks[code] = existing_stock
-            else:
-                stock = Stock(code, name, StockUtil.get_market(code))
-                stocks[code] = stock
+        try:
+            for idx, rank_data in enumerate(rows):
+                rank = idx + 1
+                code = rank_data.get('종목코드')
+                name = rank_data.get('종목명')
+                if not code:
+                    continue
+                existing_stock = self.stocks.get(code)
+                if existing_stock:  # 원래 구독 중인 종목은 기존 객체를 사용.
+                    stocks[code] = existing_stock
+                else:
+                    stock = Stock(code, name, StockUtil.get_market(code))
+                    stocks[code] = stock
+        except Exception as err:
+            print('예외:', err)
+            return None
         self.stocks = stocks
         new_code_list = self.get_stock_codes()
         return KiwoomUtil.subscribe(old_code_list, new_code_list)
@@ -91,7 +95,13 @@ class Dialog(QDialog):
                 hoga[key] = abs(int(data[key]))
                 key = f'매수{i}수량'
                 hoga[key] = abs(int(data[key]))
-            stock.set_hoga(hoga)
+            # stock.set_hoga(hoga)
         elif real_type == "주식체결":
             kiwoom_time, price = data.get('시간'), abs(int(data.get('체결가')))
-            stock.set_current_price(kiwoom_time, price, data)
+            r = stock.set_current_price(kiwoom_time, price, data)
+            if r:
+                KiwoomUtil.ding()
+                # self.kiwoom.SendOrder(rqname="시장가매수", screen="9101", accno="6064198810", order_type=1,
+                #                       code=code,
+                #                       quantity=1, price=0, hoga="03",
+                #                       order_no="")
