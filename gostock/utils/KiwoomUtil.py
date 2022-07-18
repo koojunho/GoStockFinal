@@ -61,8 +61,6 @@ class KiwoomUtil:
         return old_list, result, new_list
 
     @staticmethod
-    def ding():
-        frequency = 2500  # Set Frequency To 2500 Hertz
-        duration = 20  # Set Duration To 1000 ms == 1 second
-        for i in range(10):
+    def ding(frequency=2500, duration=20, repeat=10):
+        for i in range(repeat):
             winsound.Beep(frequency, duration)
