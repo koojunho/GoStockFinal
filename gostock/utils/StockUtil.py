@@ -15,6 +15,13 @@ class StockUtil:
         return data[0]
 
     @staticmethod
+    def get_name(code):
+        data = StockUtil.stock_info.get(code)
+        if not data:
+            return None
+        return data[2]
+
+    @staticmethod
     def get_hoga_gap(begin_price, end_price, market):
         gaps = [
             {'min': 0, 'unit': 1},

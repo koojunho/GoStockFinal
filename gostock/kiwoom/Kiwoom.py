@@ -82,9 +82,11 @@ class MyKiwoom:
         self.chejan_data_callbacks = []
 
         self.order_works = []
+        self.gap_order_work = 0.2
         self.last_time_order_work = 0
 
         self.comm_rq_works = []
+        self.gap_comm_rq_work = 4
         self.last_time_comm_rq_work = 0
 
     ####################################################################################################################
@@ -158,7 +160,7 @@ class MyKiwoom:
         if len(self.order_works) > 0:
             curr = time.time()
             gap = curr - self.last_time_order_work
-            if gap > 0.2:
+            if gap > self.gap_order_work:
                 self.last_time_order_work = curr
                 call_data = self.order_works.pop(0)
                 method = call_data.pop(0)
@@ -168,7 +170,7 @@ class MyKiwoom:
         if len(self.comm_rq_works) > 0:
             curr = time.time()
             gap = curr - self.last_time_comm_rq_work
-            if gap >= 4:
+            if gap >= self.gap_comm_rq_work:
                 self.last_time_comm_rq_work = curr
                 call_data = self.comm_rq_works.pop(0)
                 method = call_data.pop(0)
