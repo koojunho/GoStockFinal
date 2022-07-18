@@ -9,4 +9,7 @@ class StockUtil:
 
     @staticmethod
     def get_market(code):
-        return StockUtil.stock_info[code][0]
+        data = StockUtil.stock_info.get(code)
+        if not data:
+            return None
+        return data[0]
