@@ -5,57 +5,6 @@ from PyQt5.QAxContainer import *
 from gostock.utils import *
 
 
-class ScreenNoManager:
-    def __init__(self):
-        self.screen_no__stock_codes = {}
-        self.stock_code__screen_no = {}
-
-    def get_screen_no_list(self):
-        return list(self.screen_no__stock_codes.keys())
-
-    def get_available_screen_no(self):
-        curr_screen_no = 1000
-        while True:
-            screen_no = str(curr_screen_no)
-            curr_list = self.screen_no__stock_codes.get(screen_no)
-            if not curr_list:
-                return screen_no
-            elif len(curr_list) < 100:
-                return screen_no
-            else:
-                curr_screen_no += 1
-
-    def register_stock_code(self, stock_code):
-        screen_no = self.stock_code__screen_no.get(stock_code)
-        if screen_no:
-            raise Exception('이미 등록된 stock_code:', stock_code)
-
-        screen_no = self.get_available_screen_no()
-
-        self.stock_code__screen_no[stock_code] = screen_no
-
-        if not self.screen_no__stock_codes.get(screen_no):
-            self.screen_no__stock_codes[screen_no] = []
-        self.screen_no__stock_codes[screen_no].append(stock_code)
-
-        return screen_no
-
-    def unregister_stock_code(self, stock_code):
-        screen_no = self.stock_code__screen_no.get(stock_code)
-        if not screen_no:
-            raise Exception('등록되지 않은 stock_code:', stock_code)
-
-        del self.stock_code__screen_no[stock_code]
-
-        self.screen_no__stock_codes[screen_no].remove(stock_code)
-
-        return screen_no
-
-    def unregister_all(self):
-        self.screen_no__stock_codes = {}
-        self.stock_code__screen_no = {}
-
-
 class MyKiwoom:
     SCREEN_거래량급증요청_실시간열람용 = '2000'
     SCREEN_주식기본정보요청_종목명얻기 = '3000'
@@ -73,8 +22,6 @@ class MyKiwoom:
         self.ocx.OnReceiveMsg.connect(self._on_msg)
         self.ocx.OnReceiveChejanData.connect(self._on_chejan_data)
         self.b_login = False
-
-        self.screen_no_manager = ScreenNoManager()
 
         self.login_callbacks = []
         self.tr_callbacks = {}
@@ -114,30 +61,12 @@ class MyKiwoom:
     def remove_real_data_callback(self, callback):
         self.real_data_callbacks.remove(callback)
 
-    def reg_real(self, old_code_list, existing_code_list, new_code_list):
-        real_type = 0
-        if len(existing_code_list) > 0:
-            real_type = 1
+    def reg_real(self, screen_no, new_code_list):
+        code = ';'.join(new_code_list)
+        self.ocx.dynamicCall('SetRealReg(QString, QString, QString, QString)', screen_no, code, '10;21', 0)
 
-        if len(new_code_list) > 0:
-            hoga_fids = '21;50;70;49;69;48;68;47;67;46;66;45;65;44;64;43;63;42;62;41;61;51;71;52;72;53;73;54;74;55;75;56;76;57;77;58;78;59;79;60;80;216'
-            for code in new_code_list:
-                screen_no = self.screen_no_manager.register_stock_code(code)
-                self.ocx.dynamicCall(
-                    'SetRealReg(QString, QString, QString, QString)', screen_no, code, '10;' + hoga_fids, real_type)
-                real_type = 1
-            # FileUtil.write_json('_data/screen.json', self.screen_no_manager.screen_no__stock_codes)
-
-        for code in old_code_list:
-            screen_no = self.screen_no_manager.unregister_stock_code(code)
-            self.ocx.dynamicCall('SetRealRemove(QString, QString)', screen_no, code)
-
-    def unreg_real(self):
-        screen_no_list = self.screen_no_manager.get_screen_no_list()
-        for screen_no in screen_no_list:
-            print('scree_no 삭제:', screen_no)
-            self.ocx.dynamicCall('DisConnectRealData(QString)', screen_no)
-        self.screen_no_manager.unregister_all()
+    def set_real_remove(self, screen_no, code):
+        self.ocx.dynamicCall('SetRealRemove(QString, QString)', screen_no, code)
 
     def unreg_screen_real(self, screen_no):
         self.ocx.dynamicCall('DisConnectRealData(QString)', screen_no)
@@ -241,7 +170,6 @@ class MyKiwoom:
             self.tr_callbacks[screen] = tr_callback
 
         self.comm_rq_works.append([impl, screen, code, tr_callback])
-
 
     def SetInputValue(self, id, value):
         """

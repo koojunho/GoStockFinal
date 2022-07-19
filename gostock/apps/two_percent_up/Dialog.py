@@ -23,9 +23,11 @@ class Dialog(QDialog):
         self.soar_timer.setInterval(10000)
         self.soar_timer.timeout.connect(self._on_soar_timer)
         self.soar_timer.start()
+        self.load_전일대비등락률상위()
 
     def closeEvent(self, event):
         self.soar_timer.stop()
+        self.kiwoom.set_real_remove(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, 'ALL')
         self.kiwoom.unreg_screen_real(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용)
         self.kiwoom.remove_real_data_callback(self.update_real_data)
 
@@ -34,37 +36,52 @@ class Dialog(QDialog):
 
     def load_전일대비등락률상위(self):
         def result(rows):
-            self.prepare_stock_objs(rows)
-            now = datetime.today()
-            s_date = now.strftime('%Y-%m-%d')
-            s_h = now.strftime('%H')
-            s_m = now.strftime('%M')
-            s_s = now.strftime('%S')
-            s_to_h = f'{s_date} {s_h}시'
-            s_to_m = f'{s_to_h} {s_m}분'
-            s_to_s = f'{s_to_m} {s_s}초'
-            pathlib.Path(f'_data/전일대비등락률상위/{s_date}/{s_to_h}/{s_to_m}').mkdir(parents=True, exist_ok=True)
-            FileUtil.write_json(f'_data/전일대비등락률상위/{s_date}/{s_to_h}/{s_to_m}/{s_to_s}.json', rows)
+            self.kiwoom.set_real_remove(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, 'ALL')
+            code_list = self.prepare_stock_objs(rows)
+            if code_list:
+                self.kiwoom.reg_real(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, code_list)
+            # self.save_tr(rows)
 
-        self.kiwoom.unreg_screen_real(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용)
         self.kiwoom.opt10027_전일대비등락률상위요청(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, result)
+
+    def save_tr(self, rows):
+        now = datetime.today()
+        s_date = now.strftime('%Y-%m-%d')
+        s_h = now.strftime('%H')
+        s_m = now.strftime('%M')
+        s_s = now.strftime('%S')
+        s_to_h = f'{s_date} {s_h}시'
+        s_to_m = f'{s_to_h} {s_m}분'
+        s_to_s = f'{s_to_m} {s_s}초'
+        pathlib.Path(f'_data/전일대비등락률상위/{s_date}/{s_to_h}/{s_to_m}').mkdir(parents=True, exist_ok=True)
+        FileUtil.write_json(f'_data/전일대비등락률상위/{s_date}/{s_to_h}/{s_to_m}/{s_to_s}.json', rows)
+
+    def get_stock_codes(self):
+        return list(self.stocks.keys())
 
     def prepare_stock_objs(self, rows):
         stocks = {}
-        for idx, rank_data in enumerate(rows):
+        for idx, row in enumerate(rows):
             rank = idx + 1
-            code = rank_data.get('종목코드')
-            name = rank_data.get('종목명')
+            code = row.get('종목코드')
+            name = row.get('종목명')
             market = StockUtil.get_market(code)
             if not market:
-                return
+                return None
+            rate = float(row.get('등락률'))
+            if rate > 5:
+                continue
+            row['use'] = True
             existing_stock = self.stocks.get(code)
             if existing_stock:  # 원래 구독 중인 종목은 기존 객체를 사용.
                 stocks[code] = existing_stock
             else:
                 stock = Stock(code, name, market)
                 stocks[code] = stock
+            if len(stocks) >= 50:
+                break
         self.stocks = stocks
+        return self.get_stock_codes()
 
     def update_real_data(self, code, real_type, data):
         stock = self.stocks.get(code)
@@ -81,6 +98,8 @@ class Dialog(QDialog):
             r = stock.set_current_price(kiwoom_time, price, data)
             if r:
                 KiwoomUtil.ding()
+            # if stock.time_delay > 1:
+            #     print(f'지연: {stock.time_delay}')
 
     def buy(self, code):
         self.kiwoom.SendOrder(
