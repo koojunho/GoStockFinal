@@ -36,21 +36,24 @@ class Stock:
         self.last_time = kiwoom_time
 
         soar = False
+        soar_rate = 0
         for ph in reversed(self.price_history):
             # MAX_SEC 초 이내의 급등을 찾아야 하므로 MAX_SEC 초를 넘어가면 종료
             if curr_time - ph.time > self.MAX_SEC:
                 break
             # 급등을 찾아야 하므로 급등률이 2%보다 작으면 종료
-            if curr_rate - ph.rate < 2:
+            # if curr_rate - ph.rate < 2:
+            if curr_rate - ph.rate < 0.5:
                 break
             soar = True
+            soar_rate = curr_rate - ph.rate
             break
 
         self.price_history.append(DotDict({'time': curr_time, 'price': curr_price, 'rate': curr_rate}))
         self.price_history = self.price_history[-self.SIZE_OF_PRICE_HISTORY:]
 
         if soar:
-            print('급등:', self.code, self.name, curr_price)
+            print(f'{self.code} {self.name} -> {curr_rate}% ({soar_rate:.2f}% 상승)')
             return True
 
         return False
