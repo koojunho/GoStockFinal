@@ -69,7 +69,7 @@ class Dialog(QDialog):
             if not market:
                 return None
             rate = float(row.get('등락률'))
-            if rate > 5:
+            if rate > 20:
                 continue
             row['use'] = True
             existing_stock = self.stocks.get(code)
@@ -78,7 +78,7 @@ class Dialog(QDialog):
             else:
                 stock = Stock(code, name, market)
                 stocks[code] = stock
-            if len(stocks) >= 50:
+            if len(stocks) >= 100:
                 break
         self.stocks = stocks
         return self.get_stock_codes()
@@ -95,11 +95,11 @@ class Dialog(QDialog):
 
         if real_type == "주식체결":
             kiwoom_time, price = data.get('시간'), abs(int(data.get('체결가')))
-            r = stock.set_current_price(kiwoom_time, price, data)
-            if r:
-                KiwoomUtil.ding()
-            # if stock.time_delay > 1:
-            #     print(f'지연: {stock.time_delay}')
+            stock.set_current_price(kiwoom_time, price, data)
+            if stock.soar:
+                curr_rate = float(data.get('등락율'))
+                print(f'{stock.code} {stock.name}, {curr_rate}% ({stock.soar_rate:.2f}% 상승), 주문량 {stock.order_per_sec_last}, 지연 {stock.time_delay}')
+                KiwoomUtil.ding(1)
 
     def buy(self, code):
         self.kiwoom.SendOrder(

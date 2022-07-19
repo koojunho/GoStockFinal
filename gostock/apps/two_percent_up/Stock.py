@@ -10,16 +10,17 @@ class Stock:
     def __init__(self, code, name, market):
         self.code = code
         self.name = name
-
         self.market = market
-        if market == '0':
-            self.s_market = '피'
-        elif market == '10':
-            self.s_market = '닥'
 
         self.time_delay = 0
 
         self.last_time = None
+
+        self.order_per_sec = 0
+        self.order_per_sec_last = 0
+
+        self.soar = False
+        self.soar_rate = 0
 
         self.price_history = []
 
@@ -31,29 +32,32 @@ class Stock:
 
         self.time_delay = time.time() - curr_time
 
+        self.order_per_sec += 1
+
+        self.soar = False
+        self.soar_rate = 0
+
         if self.last_time == kiwoom_time:
             return
         self.last_time = kiwoom_time
 
-        soar = False
-        soar_rate = 0
+        self.order_per_sec_last = self.order_per_sec
+        self.order_per_sec = 0
+
         for ph in reversed(self.price_history):
+            # 주문이 적은데 급등이면 피한다
+            if self.order_per_sec_last < 10:
+                break
             # MAX_SEC 초 이내의 급등을 찾아야 하므로 MAX_SEC 초를 넘어가면 종료
             if curr_time - ph.time > self.MAX_SEC:
                 break
             # 급등을 찾아야 하므로 급등률이 2%보다 작으면 종료
-            # if curr_rate - ph.rate < 2:
             if curr_rate - ph.rate < 0.5:
                 break
-            soar = True
-            soar_rate = curr_rate - ph.rate
+            self.soar = True
+            self.soar_rate = curr_rate - ph.rate
+            self.price_history = []
             break
 
         self.price_history.append(DotDict({'time': curr_time, 'price': curr_price, 'rate': curr_rate}))
         self.price_history = self.price_history[-self.SIZE_OF_PRICE_HISTORY:]
-
-        if soar:
-            print(f'{self.code} {self.name} -> {curr_rate}% ({soar_rate:.2f}% 상승)')
-            return True
-
-        return False
