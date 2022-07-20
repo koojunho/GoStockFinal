@@ -52,7 +52,7 @@ class Stock:
             if curr_time - ph.time > self.MAX_SEC:
                 break
             # 급등을 찾아야 하므로 급등률이 2%보다 작으면 종료
-            if curr_rate - ph.rate < 0.5:
+            if curr_rate - ph.rate < 1:
                 break
             self.soar = True
             self.soar_rate = curr_rate - ph.rate
