@@ -2,7 +2,6 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-from gostock.apps.default.LoginWidget import LoginWidget
 from gostock.kiwoom.Kiwoom import MyKiwoom
 
 
@@ -30,7 +29,7 @@ class MainWindow(QMainWindow):
 
         # 위젯
 
-        self.curr_widget = self.login_widget = LoginWidget(self.kiwoom)
+        self.curr_widget = None
 
         # 메뉴
 
@@ -42,7 +41,7 @@ class MainWindow(QMainWindow):
 
         action = file_menu.addAction("로그인(&L)")
         action.setShortcut(QKeySequence("Ctrl+L"))
-        action.triggered.connect(self.login_widget.will_login)
+        action.triggered.connect(self.kiwoom.login)
 
         action = apps_menu.addAction("기간내 상승 잡기 (&1)")
         action.setShortcut(QKeySequence("Ctrl+1"))
@@ -66,7 +65,7 @@ class MainWindow(QMainWindow):
         self.kiwoom_timer.timeout.connect(self.kiwoom_timer_handler)
         self.kiwoom_timer.start()
 
-        self.show_login_widget()
+        self.show_check_two_in_five_widget()
 
     def closeEvent(self, event):
         self.settings.setValue("geometry", self.saveGeometry())
@@ -77,16 +76,12 @@ class MainWindow(QMainWindow):
     def kiwoom_timer_handler(self):
         self.kiwoom.interval()
 
-    def show_login_widget(self):
-        self.show_new_widget(self.login_widget)
-
     def show_two_percent_widget(self):
         if not self.real_widget:
             from gostock.apps.two_percent_up.Widget import Widget
             self.real_widget = Widget(self.kiwoom)
 
-        if not self.show_new_widget(self.real_widget):
-            self.show_login_widget()
+        self.show_new_widget(self.real_widget)
 
     def show_check_two_in_five_widget(self):
         if not self.check_widget:
@@ -97,7 +92,8 @@ class MainWindow(QMainWindow):
 
     def show_new_widget(self, new_widget):
         if new_widget.enter():
-            self.curr_widget.leave()
+            if self.curr_widget:
+                self.curr_widget.leave()
             self.takeCentralWidget()
             self.setCentralWidget(new_widget)
             self.curr_widget = new_widget

@@ -50,11 +50,19 @@ class MyKiwoom:
     def _on_login(self, err_code):
         if err_code == 0:
             self.b_login = True
+            self.refresh_all_stocks_code_name()
         for cb in self.login_callbacks:
             cb(err_code)
 
     def is_login(self):
         return self.b_login
+
+    def refresh_all_stocks_code_name(self):
+        for market_code in [StockUtil.MARKET_KOSPI, StockUtil.MARKET_KOSDAQ]:
+            code_list = list(filter(len, self.GetCodeListByMarket(market_code).split(';')))
+            for code in code_list:
+                name = self.GetMasterCodeName(code)
+                StockUtil.add_stock(market_code, code, name)
 
     ####################################################################################################################
 

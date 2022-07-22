@@ -71,7 +71,6 @@ class Widget(QWidget):
                     self.result.reverse()
                     pathlib.Path(f'_data/주식틱차트조회요청').mkdir(parents=True, exist_ok=True)
                     FileUtil.write_json(f'_data/주식틱차트조회요청/{self.code}_{self.name}.json', self.result)
-                    print('완료')
                     break
                 if amount == 1:  # 거래량이 1인 매매 제거
                     continue
@@ -79,10 +78,20 @@ class Widget(QWidget):
             if self.run:
                 self.kiwoom.opt10079_주식틱차트조회요청(MyKiwoom.SCREEN_주식틱차트조회요청_틱얻기, self.code, 2, result)
 
+        if not self.kiwoom.is_login():
+            if QtUtil.ask_login():
+                self.kiwoom.login()
+            return
+
         self.init_members()
         self.code = self.edit.text()
         self.name = StockUtil.get_name(self.code)
         if not self.name:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("종목코드가 잘못됐습니다. 종목코드를 다시 입력해주세요.")
+            msg.setWindowTitle("잘못된 종목코드")
+            msg.exec_()
             return
         self.kiwoom.opt10079_주식틱차트조회요청(MyKiwoom.SCREEN_주식틱차트조회요청_틱얻기, self.code, 0, result)
 
