@@ -16,6 +16,13 @@ class Widget(QWidget):
         self.stocks = {}
         self.soar_timer = None
 
+        self.table_widget = QTableWidget()
+        self.table_widget.setColumnCount(2)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.table_widget)
+        self.setLayout(layout)
+
     def enter(self):
         if not self.kiwoom.is_login():
             return False
@@ -46,6 +53,7 @@ class Widget(QWidget):
             self.kiwoom.set_real_remove(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, 'ALL')
             code_list = self.prepare_stock_objs(rows)
             if code_list:
+                self.draw_table()
                 self.kiwoom.reg_real(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, code_list)
             # self.save_tr(rows)
 
@@ -89,6 +97,15 @@ class Widget(QWidget):
                 break
         self.stocks = stocks
         return self.get_stock_codes()
+
+    def draw_table(self):
+        self.table_widget.setRowCount(len(self.stocks))
+        idx = 0
+        for code in self.stocks:
+            stock = self.stocks.get(code)
+            self.table_widget.setItem(idx, 0, QTableWidgetItem(stock.code))
+            self.table_widget.setItem(idx, 1, QTableWidgetItem(stock.name))
+            idx += 1
 
     def update_real_data(self, code, real_type, data):
         stock = self.stocks.get(code)
