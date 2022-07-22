@@ -1,4 +1,5 @@
 from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 from gostock.kiwoom.Kiwoom import MyKiwoom
@@ -20,27 +21,43 @@ class MainWindow(QMainWindow):
 
         self.kiwoom = MyKiwoom()
 
-        self.timer = QTimer()
-        self.timer.setInterval(100)
-        self.timer.timeout.connect(self._on_timer)
-        self.timer.start()
+        bar = self.menuBar()
 
-        layout = QVBoxLayout()
+        menu = bar.addMenu("파일(&F)")
+        action = menu.addAction("로그인(&L)")
+        action.setShortcut(QKeySequence("Ctrl+L"))
+        action.triggered.connect(self.will_login)
+
+        menu = bar.addMenu("테스트(&T)")
+        action = menu.addAction("기간내 상승 잡기 (&1)")
+        action.setShortcut(QKeySequence("Ctrl+1"))
+        action.triggered.connect(self.open_dlg_two_percent)
+        action = menu.addAction("기간내 상승 테스트 (&2)")
+        action.setShortcut(QKeySequence("Ctrl+2"))
+        action.triggered.connect(self.open_dlg_check_two_in_five)
+
         widget = QWidget()
+        layout = QVBoxLayout()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
+        # todo: 얘를 기본 가운데에 위치시킨다.
         btn = QPushButton("로그인")
         btn.clicked.connect(self.will_login)
         layout.addWidget(btn)
 
-        btn = QPushButton("2% 상승 시 매수")
-        btn.clicked.connect(self.open_dlg_two_percent)
-        layout.addWidget(btn)
+        # btn = QPushButton("2% 상승 시 매수")
+        # btn.clicked.connect(self.open_dlg_two_percent)
+        # layout.addWidget(btn)
+        #
+        # btn = QPushButton("5초 내에 2% 상승 여부 확인")
+        # btn.clicked.connect(self.open_dlg_check_two_in_five)
+        # layout.addWidget(btn)
 
-        btn = QPushButton("5초 내에 2% 상승 여부 확인")
-        btn.clicked.connect(self.open_dlg_check_two_in_five)
-        layout.addWidget(btn)
+        self.timer = QTimer()
+        self.timer.setInterval(100)
+        self.timer.timeout.connect(self._on_timer)
+        self.timer.start()
 
     def closeEvent(self, event):
         self.settings.setValue("geometry", self.saveGeometry())
@@ -69,11 +86,11 @@ class MainWindow(QMainWindow):
         self.kiwoom.interval()
 
     def open_dlg_two_percent(self):
-        from gostock.apps.two_percent_up.Dialog import Dialog
-        dlg = Dialog(self.kiwoom)
-        dlg.exec()
+        from gostock.apps.two_percent_up.Widget import Widget
+        widget = Widget(self.kiwoom)
+        self.setCentralWidget(widget)
 
     def open_dlg_check_two_in_five(self):
-        from gostock.apps.check_two_in_five.Dialog import Dialog
-        dlg = Dialog(self.kiwoom)
-        dlg.exec()
+        from gostock.apps.check_two_in_five.Widget import Widget
+        widget = Widget(self.kiwoom)
+        self.setCentralWidget(widget)

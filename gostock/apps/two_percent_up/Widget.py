@@ -9,7 +9,7 @@ from gostock.kiwoom.Kiwoom import MyKiwoom
 from gostock.utils import *
 
 
-class Dialog(QDialog):
+class Widget(QWidget):
     def __init__(self, kiwoom):
         super().__init__()
         self.setWindowTitle("2% 상승 시 매수")

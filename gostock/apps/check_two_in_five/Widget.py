@@ -7,7 +7,7 @@ from gostock.kiwoom.Kiwoom import MyKiwoom
 from gostock.utils import *
 
 
-class Dialog(QDialog):
+class Widget(QWidget):
     def __init__(self, kiwoom):
         super().__init__()
         self.setWindowTitle("5초 내에 2% 상승 여부 확인")
