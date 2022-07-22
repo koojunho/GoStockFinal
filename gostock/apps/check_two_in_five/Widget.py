@@ -10,10 +10,7 @@ from gostock.utils import *
 class Widget(QWidget):
     def __init__(self, kiwoom):
         super().__init__()
-        self.setWindowTitle("5초 내에 2% 상승 여부 확인")
-
         self.kiwoom = kiwoom
-        self.kiwoom.gap_comm_rq_work = 0.8  # 이 앱은 장중에 사용하는 것이 아니므로 TR 호출 간격을 4초에서 1초로 줄인다.
 
         layout = QHBoxLayout()
         self.setLayout(layout)
@@ -34,6 +31,22 @@ class Widget(QWidget):
         self.run = True
         self.yyyymmdd = None
         self.result = []
+        self.init_members()
+
+    def init_members(self):
+        self.code = None
+        self.name = None
+        self.run = True
+        self.yyyymmdd = None
+        self.result = []
+
+    def enter(self):
+        self.kiwoom.gap_comm_rq_work = 0.8  # 이 앱은 장중에 사용하는 것이 아니므로 TR 호출 간격을 4초에서 0.8초로 줄인다.
+        self.init_members()
+        return True
+
+    def leave(self):
+        self.kiwoom.gap_comm_rq_work = 4
 
     def load_tick_tr(self):
         def result(rows):

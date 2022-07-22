@@ -53,6 +53,9 @@ class MyKiwoom:
         for cb in self.login_callbacks:
             cb(err_code)
 
+    def is_login(self):
+        return self.b_login
+
     ####################################################################################################################
 
     def add_real_data_callback(self, callback):

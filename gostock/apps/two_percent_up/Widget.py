@@ -12,11 +12,16 @@ from gostock.utils import *
 class Widget(QWidget):
     def __init__(self, kiwoom):
         super().__init__()
-        self.setWindowTitle("2% 상승 시 매수")
+        self.kiwoom = kiwoom
+        self.stocks = {}
+        self.soar_timer = None
+
+    def enter(self):
+        if not self.kiwoom.is_login():
+            return False
 
         self.stocks = {}
 
-        self.kiwoom = kiwoom
         self.kiwoom.add_real_data_callback(self.update_real_data)
 
         self.soar_timer = QTimer()
@@ -25,7 +30,9 @@ class Widget(QWidget):
         self.soar_timer.start()
         self.load_전일대비등락률상위()
 
-    def closeEvent(self, event):
+        return True
+
+    def leave(self):
         self.soar_timer.stop()
         self.kiwoom.set_real_remove(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, 'ALL')
         self.kiwoom.unreg_screen_real(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용)
