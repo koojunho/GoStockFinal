@@ -12,19 +12,29 @@ class Widget(QWidget):
         super().__init__()
         self.kiwoom = kiwoom
 
-        layout = QHBoxLayout()
-        self.setLayout(layout)
+        load_stock_layout = QHBoxLayout()
 
         self.edit = QLineEdit()
-        layout.addWidget(self.edit)
+        load_stock_layout.addWidget(self.edit)
 
-        btn = QPushButton("실행")
+        btn = QPushButton("틱 데이터 불러오기")
         btn.clicked.connect(self.load_tick_tr)
-        layout.addWidget(btn)
+        load_stock_layout.addWidget(btn)
 
-        btn = QPushButton("테스트")
+        btn = QPushButton("종목검색")
         btn.clicked.connect(self.test)
-        layout.addWidget(btn)
+        load_stock_layout.addWidget(btn)
+
+        tick_data_table = QTableWidget()
+
+        stocks_layout = QVBoxLayout()
+        stocks_layout.addLayout(load_stock_layout)
+        stocks_layout.addWidget(tick_data_table)
+
+        layout = QHBoxLayout()
+        layout.addLayout(stocks_layout)
+        layout.addWidget(QTableWidget())  # todo: temp
+        self.setLayout(layout)
 
         self.code = None
         self.name = None
@@ -69,11 +79,9 @@ class Widget(QWidget):
             if self.run:
                 self.kiwoom.opt10079_주식틱차트조회요청(MyKiwoom.SCREEN_주식틱차트조회요청_틱얻기, self.code, 2, result)
 
+        self.init_members()
         self.code = self.edit.text()
         self.name = StockUtil.get_name(self.code)
-        self.run = True
-        self.yyyymmdd = None
-        self.result = []
         if not self.name:
             return
         self.kiwoom.opt10079_주식틱차트조회요청(MyKiwoom.SCREEN_주식틱차트조회요청_틱얻기, self.code, 0, result)
@@ -86,8 +94,8 @@ class Widget(QWidget):
         rows = []
         for filename in glob.glob(f'_data/주식틱차트조회요청/{code}*'):
             rows = FileUtil.load_json(filename)
+            print(filename)
             break
-        print(filename)
         if rows and len(rows) == 0:
             return
 
