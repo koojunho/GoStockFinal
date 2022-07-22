@@ -98,17 +98,13 @@ class Dialog(QDialog):
             stock.set_current_price(kiwoom_time, price, data)
             if stock.soar:
                 curr_rate = float(data.get('등락율'))
-                print(f'{stock.code} {stock.name}, {curr_rate}% ({stock.soar_rate:.2f}% 상승), 주문량 {stock.order_per_sec_last}, 지연 {stock.time_delay}')
+                print(
+                    f'{stock.code} {stock.name}, {curr_rate}% ({stock.soar_rate:.2f}% 상승), 주문량 {stock.order_per_sec_last}, 지연 {stock.time_delay}')
                 KiwoomUtil.ding(1)
-                self.copy_to_clipboard(f'{stock.code} {stock.name}')
+                QtUtil.copy_to_clipboard(f'{stock.code} {stock.name}')
 
     def buy(self, code):
         self.kiwoom.SendOrder(
             rqname="시장가매수", screen="9101", accno="6064198810", order_type=1,
             code=code, quantity=1, price=0, hoga="03", order_no=""
         )
-
-    def copy_to_clipboard(self, text):
-        cb = QApplication.clipboard()
-        cb.clear(mode=cb.Clipboard)
-        cb.setText(text, mode=cb.Clipboard)
