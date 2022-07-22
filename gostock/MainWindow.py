@@ -8,7 +8,15 @@ from gostock.utils import *
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.settings = QSettings("9Cells", "GoStock")
+        if self.settings.value("geometry"):
+            self.restoreGeometry(self.settings.value("geometry"))
+        if self.settings.value("windowState"):
+            self.restoreState(self.settings.value("windowState"))
+
         self.setWindowTitle('GoStock Final')
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
 
         self.kiwoom = MyKiwoom()
 
@@ -33,6 +41,11 @@ class MainWindow(QMainWindow):
         btn = QPushButton("5초 내에 2% 상승 여부 확인")
         btn.clicked.connect(self.open_dlg_check_two_in_five)
         layout.addWidget(btn)
+
+    def closeEvent(self, event):
+        self.settings.setValue("geometry", self.saveGeometry())
+        self.settings.setValue("windowState", self.saveState())
+        QMainWindow.closeEvent(self, event)
 
     def will_login(self):
         self.kiwoom.add_login_callback(self.did_login)
