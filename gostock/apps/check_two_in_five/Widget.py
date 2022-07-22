@@ -113,17 +113,17 @@ class Widget(QWidget):
         self.kiwoom.opt10079_주식틱차트조회요청(MyKiwoom.SCREEN_주식틱차트조회요청_틱얻기, self.code, 0, result)
 
     def refresh_tick_data_table(self):
-        filenames = glob.glob("_data/주식틱차트조회요청/*/*.json")
-        self.tick_data_table.setRowCount(len(filenames))
+        filepaths = glob.glob("_data/주식틱차트조회요청/*/*.json")
+        self.tick_data_table.setRowCount(len(filepaths))
         idx = 0
-        for filename in filenames:
-            tokens = re.split("\\\\", filename)
+        for filepath in filepaths:
+            tokens = re.split("\\\\", filepath)
             date = tokens[1]
-            file = tokens[2]
-            tokens = re.split("_", file)
+            filename = tokens[2]
+            tokens = re.split("_", filename)
             code = tokens[0]
-            fname = tokens[1]
-            tokens = re.split("\.", fname)
+            filename_wo_code = tokens[1]
+            tokens = re.split("\\.", filename_wo_code)
             name = tokens[0]
             self.tick_data_table.setItem(idx, 0, QTableWidgetItem(date))
             self.tick_data_table.setItem(idx, 1, QTableWidgetItem(code))
@@ -138,9 +138,8 @@ class Widget(QWidget):
 
     def test_tick_data(self, code):
         rows = []
-        for filename in glob.glob(f'_data/주식틱차트조회요청/*/{code}*'):
-            rows = FileUtil.load_json(filename)
-            print(filename)
+        for filepath in glob.glob(f'_data/주식틱차트조회요청/*/{code}*'):
+            rows = FileUtil.load_json(filepath)
             break
         if rows and len(rows) == 0:
             return
