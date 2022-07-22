@@ -1,6 +1,8 @@
-import pathlib
-from datetime import datetime
 import glob
+import pathlib
+import re
+from datetime import datetime
+
 from PyQt5.QtWidgets import *
 
 from gostock.kiwoom.Kiwoom import MyKiwoom
@@ -22,14 +24,27 @@ class Widget(QWidget):
         load_stock_layout.addWidget(btn)
 
         btn = QPushButton("종목검색")
-        btn.clicked.connect(self.test)
+        btn.clicked.connect(self.test_tick_data)
         load_stock_layout.addWidget(btn)
 
-        tick_data_table = QTableWidget()
+        btn = QPushButton("새로고침")
+        btn.clicked.connect(self.refresh_tick_data_table)
+        load_stock_layout.addWidget(btn)
+
+        self.tick_data_table = QTableWidget()
+        self.tick_data_table.setColumnCount(3)
+        self.tick_data_table.setHorizontalHeaderItem(0, QTableWidgetItem('날짜'))
+        self.tick_data_table.setHorizontalHeaderItem(1, QTableWidgetItem('종목코드'))
+        self.tick_data_table.setHorizontalHeaderItem(2, QTableWidgetItem('종목명'))
+        self.tick_data_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tick_data_table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tick_data_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tick_data_table.doubleClicked.connect(self.tick_data_table_double_clicked)
+        self.refresh_tick_data_table()
 
         stocks_layout = QVBoxLayout()
         stocks_layout.addLayout(load_stock_layout)
-        stocks_layout.addWidget(tick_data_table)
+        stocks_layout.addWidget(self.tick_data_table)
 
         layout = QHBoxLayout()
         layout.addLayout(stocks_layout)
@@ -67,10 +82,12 @@ class Widget(QWidget):
                 if not self.yyyymmdd:
                     self.yyyymmdd = s_time
                 if self.yyyymmdd != s_time:
+                    s_date = datetime.strftime(datetime.strptime(self.yyyymmdd, '%Y%m%d'), '%Y-%m-%d')
                     self.run = False
                     self.result.reverse()
-                    pathlib.Path(f'_data/주식틱차트조회요청').mkdir(parents=True, exist_ok=True)
-                    FileUtil.write_json(f'_data/주식틱차트조회요청/{self.code}_{self.name}.json', self.result)
+                    pathlib.Path(f'_data/주식틱차트조회요청/{s_date}').mkdir(parents=True, exist_ok=True)
+                    FileUtil.write_json(f'_data/주식틱차트조회요청/{s_date}/{self.code}_{self.name}.json', self.result)
+                    self.refresh_tick_data_table()
                     break
                 if amount == 1:  # 거래량이 1인 매매 제거
                     continue
@@ -95,13 +112,33 @@ class Widget(QWidget):
             return
         self.kiwoom.opt10079_주식틱차트조회요청(MyKiwoom.SCREEN_주식틱차트조회요청_틱얻기, self.code, 0, result)
 
-    def test(self):
-        code = self.edit.text()
-        if not code:
-            return
+    def refresh_tick_data_table(self):
+        filenames = glob.glob("_data/주식틱차트조회요청/*/*.json")
+        self.tick_data_table.setRowCount(len(filenames))
+        idx = 0
+        for filename in filenames:
+            tokens = re.split("\\\\", filename)
+            date = tokens[1]
+            file = tokens[2]
+            tokens = re.split("_", file)
+            code = tokens[0]
+            fname = tokens[1]
+            tokens = re.split("\.", fname)
+            name = tokens[0]
+            self.tick_data_table.setItem(idx, 0, QTableWidgetItem(date))
+            self.tick_data_table.setItem(idx, 1, QTableWidgetItem(code))
+            self.tick_data_table.setItem(idx, 2, QTableWidgetItem(name))
+            idx += 1
 
+    def tick_data_table_double_clicked(self, mi):
+        row_idx = mi.row()
+        item = self.tick_data_table.item(row_idx, 1)
+        code = item.text()
+        self.test_tick_data(code)
+
+    def test_tick_data(self, code):
         rows = []
-        for filename in glob.glob(f'_data/주식틱차트조회요청/{code}*'):
+        for filename in glob.glob(f'_data/주식틱차트조회요청/*/{code}*'):
             rows = FileUtil.load_json(filename)
             print(filename)
             break
@@ -127,7 +164,7 @@ class Widget(QWidget):
                 if curr_time - ph.time > sec_size:
                     break
                 # 급등을 찾아야 하므로 급등률이 2보다 작으면 종료
-                if curr_rate - ph.rate < 2:
+                if curr_rate - ph.rate < 1:
                     break
                 soar = True
                 break
