@@ -6,6 +6,7 @@ from datetime import datetime
 from PyQt5.QtWidgets import *
 
 from gostock.kiwoom.Kiwoom import MyKiwoom
+from gostock.subs import *
 from gostock.utils import *
 
 
@@ -24,7 +25,7 @@ class Widget(QWidget):
         load_stock_layout.addWidget(btn)
 
         btn = QPushButton("종목검색")
-        btn.clicked.connect(self.test_tick_data)
+        btn.clicked.connect(self.open_select_stock_dlg)
         load_stock_layout.addWidget(btn)
 
         btn = QPushButton("새로고침")
@@ -111,6 +112,11 @@ class Widget(QWidget):
             msg.exec_()
             return
         self.kiwoom.opt10079_주식틱차트조회요청(MyKiwoom.SCREEN_주식틱차트조회요청_틱얻기, self.code, 0, result)
+
+    def open_select_stock_dlg(self):
+        dlg = SelectStockDialog(self.kiwoom)
+        if dlg.exec():
+            self.edit.setText(dlg.code)
 
     def refresh_tick_data_table(self):
         filepaths = glob.glob("_data/주식틱차트조회요청/*/*.json")

@@ -36,6 +36,8 @@ class MyKiwoom:
         self.gap_comm_rq_work = 4
         self.last_time_comm_rq_work = 0
 
+        self.last_next = None
+
     ####################################################################################################################
 
     def add_login_callback(self, callback):
@@ -63,6 +65,7 @@ class MyKiwoom:
             for code in code_list:
                 name = self.GetMasterCodeName(code)
                 StockUtil.add_stock(market_code, code, name)
+        StockUtil.dump_stocks()
 
     ####################################################################################################################
 
@@ -141,7 +144,7 @@ class MyKiwoom:
 
         self.comm_rq_works.append([impl, screen, tr_callback])
 
-    def opt10027_전일대비등락률상위요청(self, screen, tr_callback):
+    def opt10027_전일대비등락률상위요청(self, screen, tr_callback, next=0):
         def impl(screen, tr_callback):
             # 시장구분 = 000:전체, 001:코스피, 101:코스닥
             self.SetInputValue("시장구분", "000")
@@ -159,7 +162,7 @@ class MyKiwoom:
             self.SetInputValue("가격조건", "0")
             # 거래대금조건 = 0:전체조회, 3:3천만원이상, 5:5천만원이상, 10:1억원이상, 30:3억원이상, 50:5억원이상, 100:10억원이상, 300:30억원이상, 500:50억원이상, 1000:100억원이상, 3000:300억원이상, 5000:500억원이상
             self.SetInputValue("거래대금조건", "0")
-            self.CommRqData("전일대비등락률상위요청", "opt10027", 0, screen)
+            self.CommRqData("전일대비등락률상위요청", "opt10027", next, screen)
             self.tr_callbacks[screen] = tr_callback
 
         self.comm_rq_works.append([impl, screen, tr_callback])
@@ -204,6 +207,8 @@ class MyKiwoom:
 
     def _on_tr_data(self, screen, rqname, trcode, record, next):
         # print('_on_tr_data', screen, rqname, trcode, record, next)
+        self.last_next = next
+
         fields = self.real_fields.get(rqname)
         if not fields:
             print(f'real_fields.json에 "{rqname}"에 대한 필드 정보가 없습니다.')

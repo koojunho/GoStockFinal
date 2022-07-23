@@ -1,11 +1,37 @@
+from datetime import datetime
+from gostock.utils import *
+
+
 class StockUtil:
     MARKET_KOSPI = '0'
     MARKET_KOSDAQ = '10'
+    STOCKS_FILENAME = '_data/전체종목.json'
     stock_info = {}
 
     @staticmethod
     def add_stock(market, code, name):
         StockUtil.stock_info[code] = market, code, name
+
+    @staticmethod
+    def dump_stocks(output=None):
+        stocks = StockUtil.stock_info
+        rows = []
+        for code in stocks:
+            data = stocks[code]
+            market = data[0]
+            s_market = '??'
+            if market == StockUtil.MARKET_KOSPI:
+                s_market = '코스피'
+            elif market == StockUtil.MARKET_KOSDAQ:
+                s_market = '코스닥'
+            name = data[2]
+            rows.append({'market': s_market, 'code': code, 'name': name})
+        result = {'updated_at': datetime.today().strftime('%Y-%m-%d %H:%M:%S'), 'stocks': rows}
+
+        if not output:
+            output = StockUtil.STOCKS_FILENAME
+
+        FileUtil.write_json(output, result)
 
     @staticmethod
     def get_market(code):
