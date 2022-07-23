@@ -1,5 +1,5 @@
+import pathlib
 from datetime import datetime
-from pathlib import Path
 
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
@@ -95,7 +95,7 @@ class AllStocksWidget(QWidget):
         self.setLayout(layout)
 
     def load_stocks_file(self):
-        path = Path(StockUtil.STOCKS_FILENAME)
+        path = pathlib.Path(StockUtil.STOCKS_FILENAME)
         if not path.is_file():
             return
         stocks_data = DotDict(FileUtil.load_json(StockUtil.STOCKS_FILENAME))
@@ -151,8 +151,15 @@ class RankingStocksWidget(QWidget):
 
         self.result = []
 
+    def refresh(self):
+        if not self.kiwoom.is_login():
+            if QtUtil.ask_login():
+                self.kiwoom.login()
+            return
+        self.load_전일대비등락률상위()
+
     def load_stocks_file(self):
-        path = Path('_data/지난상위종목.json')
+        path = pathlib.Path('_data/지난상위종목.json')
         if not path.is_file():
             return
         stocks_data = DotDict(FileUtil.load_json('_data/지난상위종목.json'))
@@ -167,13 +174,6 @@ class RankingStocksWidget(QWidget):
             self.stocks_table.setItem(idx, 1, QTableWidgetItem(stock['종목명']))
             self.stocks_table.setItem(idx, 2, QTableWidgetItem(stock['등락률']))
 
-    def refresh(self):
-        if not self.kiwoom.is_login():
-            if QtUtil.ask_login():
-                self.kiwoom.login()
-            return
-        self.load_전일대비등락률상위()
-
     def load_전일대비등락률상위(self):
         def end():
             result = {'updated_at': datetime.today().strftime('%Y-%m-%d %H:%M:%S'), 'stocks': self.result}
@@ -184,9 +184,9 @@ class RankingStocksWidget(QWidget):
             self.kiwoom.set_real_remove(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, 'ALL')
             self.result += rows
             if self.kiwoom.last_next == '2':
-                self.kiwoom.opt10027_전일대비등락률상위요청(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, keep_loading, next=2)
+                self.kiwoom.opt10027_전일대비등락률상위요청(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, keep_loading, 상하한포함=1, next=2)
             else:
                 end()
 
         self.result = []
-        self.kiwoom.opt10027_전일대비등락률상위요청(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, keep_loading)
+        self.kiwoom.opt10027_전일대비등락률상위요청(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, keep_loading, 상하한포함=1)

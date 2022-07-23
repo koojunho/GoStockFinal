@@ -53,6 +53,11 @@ class MainWindow(QMainWindow):
         self.check_widget = None
         action.triggered.connect(self.show_check_two_in_five_widget)
 
+        action = apps_menu.addAction("전체 종목 분석 (&3)")
+        action.setShortcut(QKeySequence("Ctrl+3"))
+        self.all_stocks_analysis_widget = None
+        action.triggered.connect(self.show_all_stocks_analysis_widget)
+
         action = window_menu.addAction("Always on top")
         action.setShortcut(QKeySequence("Ctrl+T"))
         action.setCheckable(True)
@@ -90,11 +95,23 @@ class MainWindow(QMainWindow):
 
         self.show_new_widget(self.check_widget)
 
+    def show_all_stocks_analysis_widget(self):
+        if not self.all_stocks_analysis_widget:
+            from gostock.apps.all_stocks_analysis.Widget import Widget
+            self.all_stocks_analysis_widget = Widget(self.kiwoom)
+
+        self.show_new_widget(self.all_stocks_analysis_widget)
+
     def show_new_widget(self, new_widget):
+        # todo: enter() 할 수 없는데 먼저 leave()를 하면 빈 화면이 될 수도 있다
+        #   원래는 아래 세줄이 if ....enter(): 바로 아래 위치해서 enter() 할 수 있으면 leave() 했다
+        #   그런데.. enter에서 세팅한 것을 leave가 덮어버리는 경우가 생겨서 여기로 뺸건데..
+        #   음.. can_enter() 같은게 필요할 수도 있고 아니면 무조건 enter 가능하게 만들 수도 있는데 그렇다면 이대로 두면 된다.
+        if self.curr_widget:
+            self.curr_widget.leave()
+        self.takeCentralWidget()
+
         if new_widget.enter():
-            if self.curr_widget:
-                self.curr_widget.leave()
-            self.takeCentralWidget()
             self.setCentralWidget(new_widget)
             self.curr_widget = new_widget
             return True
