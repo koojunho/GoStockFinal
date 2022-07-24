@@ -70,7 +70,7 @@ class MainWindow(QMainWindow):
         self.kiwoom_timer.timeout.connect(self.kiwoom_timer_handler)
         self.kiwoom_timer.start()
 
-        self.show_check_two_in_five_widget()
+        self.show_two_percent_widget()
 
     def closeEvent(self, event):
         self.settings.setValue("geometry", self.saveGeometry())

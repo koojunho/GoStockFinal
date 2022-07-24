@@ -16,17 +16,37 @@ class Widget(QWidget):
         self.stocks = {}
         self.soar_timer = None
 
+        toolbar_layout = QHBoxLayout()
+
+        self.last_loading_time = QLabel('얻어온 목록이 없습니다.')
+        toolbar_layout.addWidget(self.last_loading_time)
+
+        btn_select = QPushButton('목록얻기')
+        btn_select.clicked.connect(self._on_btn_load_stock_list_clicked)
+        toolbar_layout.addWidget(btn_select, alignment=Qt.AlignRight)
+
         self.table_widget = QTableWidget()
         self.table_widget.setColumnCount(2)
+        self.table_widget.setHorizontalHeaderItem(0, QTableWidgetItem('종목코드'))
+        self.table_widget.setHorizontalHeaderItem(1, QTableWidgetItem('종목명'))
+        self.table_widget.setHorizontalHeaderItem(2, QTableWidgetItem('등락률'))
+        self.table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table_widget.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+        l_v_layout = QVBoxLayout()
+        l_v_layout.addLayout(toolbar_layout)
+        l_v_layout.addWidget(self.table_widget)
+
+        lr_layout = QHBoxLayout()
+        lr_layout.addLayout(l_v_layout)
+        lr_layout.addWidget(QTableWidget())  # todo: temp
 
         layout = QVBoxLayout()
-        layout.addWidget(self.table_widget)
+        layout.addLayout(lr_layout)
         self.setLayout(layout)
 
     def enter(self):
-        if not self.kiwoom.is_login():
-            return False
-
         self.stocks = {}
 
         self.kiwoom.add_real_data_callback(self.update_real_data)
@@ -35,7 +55,7 @@ class Widget(QWidget):
         self.soar_timer.setInterval(10000)
         self.soar_timer.timeout.connect(self._on_soar_timer)
         self.soar_timer.start()
-        self.load_전일대비등락률상위()
+        self.load_stock_list()
 
         return True
 
@@ -46,11 +66,24 @@ class Widget(QWidget):
         self.kiwoom.remove_real_data_callback(self.update_real_data)
 
     def _on_soar_timer(self):
-        self.load_전일대비등락률상위()
+        self.load_stock_list()
 
-    def load_전일대비등락률상위(self):
+    def _on_btn_load_stock_list_clicked(self):
+        if not self.kiwoom.is_login():
+            if QtUtil.ask_login():
+                self.kiwoom.login()
+            return
+
+        # 버튼을 누른 경우 바로 호출하고 싶어서 delay gap을 0으로 세팅
+        # 응답이 받아지면 load_stock_list에서 4로 다시 되돌린다.
+        self.kiwoom.gap_comm_rq_work = 0
+        self.load_stock_list()
+
+    def load_stock_list(self):
         def result(rows):
+            self.kiwoom.gap_comm_rq_work = 4
             self.kiwoom.set_real_remove(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, 'ALL')
+            self.last_loading_time.setText(f'마지막 업데이트: {datetime.today().strftime("%Y-%m-%d %H:%M:%S")}')
             code_list = self.prepare_stock_objs(rows)
             if code_list:
                 self.draw_table()
@@ -111,7 +144,7 @@ class Widget(QWidget):
         stock = self.stocks.get(code)
 
         # 시세정보 TR을 호출하면 이어서 실시간 데이터가 지속적으로 들어온다.
-        # self.kiwoom.unreg_all_real(MyKiwoom.SCREEN_거래량급증요청_실시간열람용) 호출로 막기는 하지만
+        # self.kiwoom.unreg_all_real() 호출로 막기는 하지만
         # 몇 건은 여기까지 들어오게 된다. 따라서 명시적으로 구독 중인 종목이 아니면 무시한다.
         if not stock:
             # print('비구독 코드:', code, real_type)
