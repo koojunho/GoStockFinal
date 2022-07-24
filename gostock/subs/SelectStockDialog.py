@@ -1,10 +1,9 @@
 import pathlib
-from datetime import datetime
 
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
-from gostock.kiwoom.Kiwoom import MyKiwoom
+from gostock.data import *
 from gostock.utils import *
 
 
@@ -115,6 +114,7 @@ class AllStocksWidget(QWidget):
             if QtUtil.ask_login():
                 self.kiwoom.login()
             return
+
         self.kiwoom.refresh_all_stocks_code_name()
         self.load_stocks_file()
 
@@ -124,6 +124,7 @@ class RankingStocksWidget(QWidget):
         super().__init__()
 
         self.kiwoom = kiwoom
+        self.stock_ranking = StockRanking(kiwoom)
 
         top_h_layout = QHBoxLayout()
 
@@ -149,20 +150,21 @@ class RankingStocksWidget(QWidget):
         layout.addWidget(self.stocks_table)
         self.setLayout(layout)
 
-        self.result = []
-
     def refresh(self):
+        def done():
+            self.load_stocks_file()
+
         if not self.kiwoom.is_login():
             if QtUtil.ask_login():
                 self.kiwoom.login()
             return
-        self.load_전일대비등락률상위()
+
+        self.stock_ranking.download_data(done)
 
     def load_stocks_file(self):
-        path = pathlib.Path('_data/지난상위종목.json')
-        if not path.is_file():
+        stocks_data = self.stock_ranking.load_downloaded_file()
+        if not stocks_data:
             return
-        stocks_data = DotDict(FileUtil.load_json('_data/지난상위종목.json'))
         self.label_update.setText(f'마지막 업데이트: {stocks_data.updated_at}')
         stocks = stocks_data.stocks
         self.stocks_table.setRowCount(0)
@@ -173,20 +175,3 @@ class RankingStocksWidget(QWidget):
             self.stocks_table.setItem(idx, 0, QTableWidgetItem(stock['종목코드']))
             self.stocks_table.setItem(idx, 1, QTableWidgetItem(stock['종목명']))
             self.stocks_table.setItem(idx, 2, QTableWidgetItem(stock['등락률']))
-
-    def load_전일대비등락률상위(self):
-        def end():
-            result = {'updated_at': datetime.today().strftime('%Y-%m-%d %H:%M:%S'), 'stocks': self.result}
-            FileUtil.write_json('_data/지난상위종목.json', result)
-            self.load_stocks_file()
-
-        def keep_loading(rows):
-            self.kiwoom.set_real_remove(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, 'ALL')
-            self.result += rows
-            if self.kiwoom.last_next == '2':
-                self.kiwoom.opt10027_전일대비등락률상위요청(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, keep_loading, 상하한포함=1, next=2)
-            else:
-                end()
-
-        self.result = []
-        self.kiwoom.opt10027_전일대비등락률상위요청(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, keep_loading, 상하한포함=1)
