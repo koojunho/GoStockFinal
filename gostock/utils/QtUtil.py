@@ -1,3 +1,4 @@
+from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
 
@@ -19,3 +20,12 @@ class QtUtil:
         if retval == QMessageBox.Yes:
             return True
         return False
+
+    @staticmethod
+    def find_table_item(table, search, col_idx):
+        matching_items = table.findItems(search, Qt.MatchExactly)
+        for matching_item in matching_items:
+            if matching_item.column() is not col_idx:
+                continue
+            return matching_item
+        return None

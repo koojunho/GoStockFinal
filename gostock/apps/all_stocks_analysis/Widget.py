@@ -1,9 +1,6 @@
-import pathlib
-from datetime import datetime
-
 from PyQt5.QtWidgets import *
 
-from gostock.kiwoom.Kiwoom import MyKiwoom
+from gostock.data import *
 from gostock.utils import *
 
 
@@ -11,6 +8,8 @@ class Widget(QWidget):
     def __init__(self, kiwoom):
         super().__init__()
         self.kiwoom = kiwoom
+        self.stock_ranking = StockRanking(kiwoom)
+        self.one_min_chart_data = OneMinChartData(kiwoom)
 
         btn_load_all = QPushButton("전체종목 분봉차트 불러오기")
         btn_load_all.clicked.connect(self.refresh)
@@ -24,7 +23,7 @@ class Widget(QWidget):
         self.stocks_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.stocks_table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.stocks_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.load_stocks_file()
+        self.fill_table_with_stock_ranking()
 
         stocks_layout = QVBoxLayout()
         stocks_layout.addWidget(btn_load_all)
@@ -45,17 +44,21 @@ class Widget(QWidget):
         self.kiwoom.gap_comm_rq_work = 4
 
     def refresh(self):
+        def done():
+            self.fill_table_with_stock_ranking()
+            self.download_all_stocks_one_min_chart_data()
+
         if not self.kiwoom.is_login():
             if QtUtil.ask_login():
                 self.kiwoom.login()
             return
-        self.load_전일대비등락률상위()
 
-    def load_stocks_file(self):
-        path = pathlib.Path('_data/지난상위종목.json')
-        if not path.is_file():
+        self.stock_ranking.download_data(done)
+
+    def fill_table_with_stock_ranking(self):
+        stocks_data = self.stock_ranking.load_downloaded_file()
+        if not stocks_data:
             return
-        stocks_data = DotDict(FileUtil.load_json('_data/지난상위종목.json'))
         stocks = stocks_data.stocks
         self.stocks_table.setRowCount(0)
         for stock in stocks:
@@ -67,33 +70,16 @@ class Widget(QWidget):
             self.stocks_table.setItem(idx, 1, QTableWidgetItem(stock['종목명']))
             self.stocks_table.setItem(idx, 2, QTableWidgetItem(stock['등락률']))
 
-    def load_전일대비등락률상위(self):
-        def end():
-            result = {'updated_at': datetime.today().strftime('%Y-%m-%d %H:%M:%S'), 'stocks': self.result}
-            FileUtil.write_json('_data/지난상위종목.json', result)
-            self.load_stocks_file()
-            idx = 0
-            for stock in self.result:
-                self.load_분봉차트(idx, stock['종목코드'])
-                idx += 1
+    def download_all_stocks_one_min_chart_data(self):
+        def done(code):
+            rows = self.one_min_chart_data.load_downloaded_file(code)
+            item = QtUtil.find_table_item(self.stocks_table, code, 0)
+            self.stocks_table.setItem(item.row(), 3, QTableWidgetItem(rows[0]['현재가']))
 
-        def keep_loading(rows):
-            self.kiwoom.set_real_remove(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, 'ALL')
-            self.result += rows
-            if self.kiwoom.last_next == '2':
-                self.kiwoom.opt10027_전일대비등락률상위요청(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, keep_loading, 상하한포함=1, next=2)
-            else:
-                end()
+        stocks_data = self.stock_ranking.load_downloaded_file()
+        if not stocks_data:
+            return
 
-        self.result = []
-        self.kiwoom.opt10027_전일대비등락률상위요청(MyKiwoom.SCREEN_전일대비등락률상위요청_실시간열람용, keep_loading, 상하한포함=1)
-
-    def load_분봉차트(self, idx, code):
-        def keep_loading(rows):
-            self.kiwoom.set_real_remove(MyKiwoom.SCREEN_주식분봉차트조회요청_분석용, 'ALL')
-            pathlib.Path(f'_data/주식분봉차트조회요청').mkdir(parents=True, exist_ok=True)
-            rows.reverse()
-            FileUtil.write_json(f'_data/주식분봉차트조회요청/{code}.json', rows)
-            self.stocks_table.setItem(idx, 3, QTableWidgetItem(rows[0]['현재가']))
-
-        self.kiwoom.opt10080_주식분봉차트조회요청(MyKiwoom.SCREEN_주식분봉차트조회요청_분석용, code, 0, keep_loading)
+        for stock in stocks_data.stocks:
+            code = stock['종목코드']
+            self.one_min_chart_data.download_data(code, done)
